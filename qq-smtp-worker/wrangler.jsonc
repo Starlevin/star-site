@@ -1,0 +1,8 @@
+{
+  "name": "qinghan-qq-smtp-probe",
+  "main": "test-mail.mjs",
+  "compatibility_date": "2026-10-17",
+  "workers_dev": true,
+  "durable_objects": {"bindings": [{"name":"MAIL_TEST","class_name":"MailTest"}]},
+  "migrations": [{"tag":"v1","new_sqlite_classes":["MailTest"]}]
+}
