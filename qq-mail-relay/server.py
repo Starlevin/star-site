@@ -1,5 +1,5 @@
 """QQ IMAP HTTPS relay. Deploy behind a managed HTTPS ingress; never expose this HTTP port directly."""
-import os, json, ssl, imaplib, email, secrets, threading, re
+import os, json, ssl, imaplib, email, secrets, threading, re, time
 from email import policy
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 TOKEN = os.environ['QQ_RELAY_TOKEN']
@@ -84,26 +84,43 @@ class Handler(BaseHTTPRequestHandler):
         auth=self.headers.get('Authorization','')
         if not secrets.compare_digest(auth.encode(),('Bearer '+TOKEN).encode()): return self.reply(401,{'error':'UNAUTHORIZED'})
         if not SLOTS.acquire(blocking=False): return self.reply(429,{'error':'BUSY'})
+        started=time.monotonic()
         try:
             self.connection.settimeout(30)
             length=int(self.headers.get('Content-Length','0'))
-            if not 0<length<=8192: return self.reply(400,{'error':'INVALID_REQUEST'})
-            b=json.loads(self.rfile.read(length))
-            result=execute(b.get('tool'),b.get('arguments',{}))
-            self.reply(200,result)
+            if not 0<length<=8192:
+                status, body=400, {'error':'INVALID_REQUEST'}
+            else:
+                b=json.loads(self.rfile.read(length))
+                result=execute(b.get('tool'),b.get('arguments',{}))
+                status, body=200, result
         except imaplib.IMAP4.error:
-            self.reply(502,{'error':'IMAP_AUTH_OR_PROTOCOL_FAILED'})
+            status, body=502, {'error':'IMAP_AUTH_OR_PROTOCOL_FAILED'}
         except (TimeoutError, OSError):
-            self.reply(502,{'error':'IMAP_TLS_OR_NETWORK_FAILED'})
+            status, body=502, {'error':'IMAP_TLS_OR_NETWORK_FAILED'}
         except ValueError as e:
             allowed={'INVALID_ARGUMENTS','MAILBOX_UNAVAILABLE','UIDVALIDITY_UNAVAILABLE','MAILBOX_CHANGED_REFRESH_LIST','EMAIL_NOT_FOUND','EMAIL_TOO_LARGE','SEARCH_CHARSET_OR_QUERY_UNSUPPORTED','SEARCH_FAILED'}
-            self.reply(400,{'error':str(e) if str(e) in allowed else 'INVALID_REQUEST'})
+            status, body=400, {'error':str(e) if str(e) in allowed else 'INVALID_REQUEST'}
         except Exception:
-            self.reply(502,{'error':'IMAP_REQUEST_FAILED'}) # no upstream exception text or secrets
-        finally: SLOTS.release()
+            status, body=502, {'error':'IMAP_REQUEST_FAILED'} # no upstream exception text or secrets
+        finally:
+            SLOTS.release()
+        # Log only status and duration; never log arguments, headers, email content or credentials.
+        print(f"mail_request status={status} duration_ms={int((time.monotonic()-started)*1000)}",flush=True)
+        # Write the response only once. A disconnected client is not an IMAP failure.
+        self.reply(status,body)
     def reply(self,status,data):
         raw=json.dumps(data,ensure_ascii=False).encode()
-        self.send_response(status); self.send_header('Content-Type','application/json; charset=utf-8'); self.send_header('Cache-Control','no-store'); self.send_header('Content-Length',str(len(raw))); self.end_headers(); self.wfile.write(raw)
+        try:
+            self.send_response(status)
+            self.send_header('Content-Type','application/json; charset=utf-8')
+            self.send_header('Cache-Control','no-store')
+            self.send_header('Content-Length',str(len(raw)))
+            self.end_headers()
+            self.wfile.write(raw)
+        except (BrokenPipeError, ConnectionResetError, ConnectionAbortedError, TimeoutError):
+            # Client disconnected, possibly due to an upstream cold-start timeout.
+            self.close_connection=True
 
 if __name__=='__main__':
     ThreadingHTTPServer(('0.0.0.0',int(os.environ.get('PORT','8080'))),Handler).serve_forever()
