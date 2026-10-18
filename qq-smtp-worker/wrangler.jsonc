@@ -1,8 +1,11 @@
 {
-  "name": "qinghan-qq-smtp-probe",
-  "main": "test-mail.mjs",
+  "name": "qinghan-qq-mail-sender",
+  "account_id": "7c4db00da8528f2c88fb9073a3c60e1d",
+  "main": "service.mjs",
   "compatibility_date": "2026-10-17",
   "workers_dev": true,
-  "durable_objects": {"bindings": [{"name":"MAIL_TEST","class_name":"MailTest"}]},
-  "migrations": [{"tag":"v1","new_sqlite_classes":["MailTest"]}]
+  "preview_urls": false,
+  "observability": {"enabled": false},
+  "durable_objects": {"bindings": [{"name":"MAIL_SENDER","class_name":"MailSender"}]},
+  "migrations": [{"tag":"v1","new_sqlite_classes":["MailSender"]}]
 }
