@@ -1,7 +1,13 @@
 // Private operator helper: all authentication arrives through an anonymous stdin pipe.
 // Never print request headers, credentials, mailbox account, or SMTP auth responses.
 import { fetch, ProxyAgent } from 'undici';
-let raw=''; for await (const chunk of process.stdin) raw+=chunk;
+let raw='';
+if(process.stdin.isTTY){
+ process.stderr.write('Ready for private operator JSON on stdin (input is hidden).\n');
+ process.stdin.setRawMode(true);process.stdin.setEncoding('utf8');
+ raw=await new Promise((resolve,reject)=>{let buffer='';const onData=chunk=>{buffer+=chunk;if(buffer.includes('\u0003')){process.stdin.off('data',onData);process.stdin.pause();reject(Error('Cancelled'));}else if(buffer.includes('\n')||buffer.includes('\r')){process.stdin.off('data',onData);process.stdin.pause();resolve(buffer.trim());}};process.stdin.on('data',onData);process.stdin.resume();});
+ process.stdin.setRawMode(false);
+}else{for await(const chunk of process.stdin)raw+=chunk;}
 const config=JSON.parse(raw);raw='';
 const dispatcher=new ProxyAgent('http://127.0.0.1:7890');
 try {

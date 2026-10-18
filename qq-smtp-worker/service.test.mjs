@@ -31,6 +31,11 @@ test('crash after durable reservation blocks future SMTP attempt',async()=>{
  const old=ctx.data.get('request');ctx.data.set('request',{...old,state:'attempting'});globalThis.mockSmtp=async()=>assert.fail('must not send');
  const repeat=await new MailSender(ctx,{}).fetch(request());assert.equal((await repeat.json()).state,'unknown');
 });
+test('persistence failure after SMTP acceptance remains unknown and never resends',async()=>{
+ const ctx=state();const put=ctx.storage.put;ctx.storage.put=async(key,value)=>{if(value.state==='accepted')throw Error('simulated persistence failure');return put(key,value);};let count=0;globalThis.mockSmtp=async()=>{count++;};
+ const response=await new MailSender(ctx,{}).fetch(request());const body=await response.json();assert.equal(body.state,'unknown');assert.equal(body.error,'SEND_OUTCOME_UNKNOWN');assert.equal(body.automaticRetry,false);
+ await new MailSender(ctx,{}).fetch(request());assert.equal(count,1);
+});
 test('SMTP DATA acceptance survives QUIT failure, lost reply is unknown, explicit rejection is failed',async()=>{
  const smtpSource=(await readFile(new URL('./smtp.mjs',import.meta.url),'utf8')).replace("import { connect } from 'cloudflare:sockets';",'const connect=(...args)=>globalThis.fakeConnect(...args);').replace("'./validation.mjs'",JSON.stringify(validationUrl));
  const {smtp}=await import('data:text/javascript;base64,'+Buffer.from(smtpSource).toString('base64'));
