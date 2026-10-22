@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: ember-camp-pve
+    runtime: node
+    plan: free
+    region: singapore
+    buildCommand: node -v
+    startCommand: npm start
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MAX_ROOMS
+        value: '28'
