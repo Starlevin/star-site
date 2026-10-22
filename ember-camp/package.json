@@ -1,0 +1,13 @@
+{
+  "name": "ember-camp-mvp",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "余烬营地：零第三方依赖，4人多人联机3D生存建造原型",
+  "scripts": {
+    "start": "node server.mjs",
+    "dev": "node --watch server.mjs",
+    "test": "node --test tests/*.test.mjs"
+  },
+  "engines": { "node": ">=22" }
+}
