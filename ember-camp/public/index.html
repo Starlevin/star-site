@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, viewport-fit=cover"/>
+  <meta name="theme-color" content="#0a181f"/>
+  <title>余烬营地 · Ember Camp</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml"/>
+  <link rel="stylesheet" href="/style.css"/>
+</head>
+<body>
+  <canvas id="world" aria-label="余烬营地三维游戏画面"></canvas>
+  <div class="vignette"></div>
+  <header class="topbar">
+    <div class="brand"><div class="brand-icon">✦</div><div><b>余烬营地</b><small>EMBER CAMP · ONLINE 0.2</small></div></div>
+    <div class="status" id="connection"><span class="dot"></span><span id="connectionText">等待连接</span></div>
+  </header>
+  <section id="hud" class="hud hidden" aria-live="polite">
+    <div class="left-stack">
+      <div class="glass card stats">
+        <div class="small-label">营地状态 <span class="day-chip" id="dayChip">DAY 1</span></div>
+        <div class="bar-top"><span>营地核心</span><b id="coreLabel">300 / 300</b></div>
+        <div class="progress"><div class="bar cyan" id="coreBar" style="width:100%"></div></div>
+        <div class="bar-top"><span>生命值</span><b id="hpLabel">100 / 100</b></div>
+        <div class="progress"><div class="bar green" id="hpBar" style="width:100%"></div></div>
+        <div class="resources"><div>🪵 <b id="wood">0</b><small>木材</small></div><div>🪨 <b id="stone">0</b><small>石头</small></div><div>🍓 <b id="berries">0</b><small>浆果</small></div></div>
+      </div>
+      <div class="glass card party"><div class="small-label">远征小队 <span id="playerCount">0 / 4</span></div><div id="playerList"></div></div>
+    </div>
+    <div class="right-stack">
+      <div class="glass card clock-card"><div class="small-label">当前时段</div><div class="clock-line"><span id="phaseIcon">☀</span><div><b id="phaseText">白天 · 准备阶段</b><small id="phaseHint">砍树、采石、建造防线</small></div></div><div class="progress"><div class="bar amber" id="timerBar" style="width:100%"></div></div><div class="time-label" id="timer">00:42</div></div>
+      <div class="glass card objectives"><div class="small-label">本局任务</div><div class="objective"><i class="objective-dot"></i><span id="objectiveText">守住营地核心，撑过三夜</span></div><div class="subtle-text" id="waveText">怪物尚未出现</div></div>
+    </div>
+    <div class="bottom-area">
+      <div class="feed" id="eventFeed"></div>
+      <div class="actionbar glass"><button id="gatherBtn" class="action"><span>🪓</span><b>采集</b><small>E</small></button><button id="attackBtn" class="action"><span>⚔️</span><b>攻击</b><small>空格</small></button><button id="wallBtn" class="action"><span>🧱</span><b>木墙</b><small>1 · 4 木</small></button><button id="fireBtn" class="action"><span>🔥</span><b>篝火</b><small>2 · 5 木 3 石</small></button><button id="buildBtn" class="action primary"><span>🔨</span><b>建造</b><small>B</small></button><button id="eatBtn" class="action"><span>🍓</span><b>食用</b><small>H</small></button></div>
+      <div class="room-code glass"><span>房间码</span><strong id="roomCode">------</strong><button id="copyCode" title="复制房间号">⧉</button><button id="shareBtn" title="分享邀请链接">↗</button></div>
+      <div class="keyboard-hint">W A S D / 方向键移动 · E 采集 · 空格攻击 · B 建造 · H 食用浆果</div>
+    </div>
+    <div class="mobile-pad" id="mobilePad"><button data-dir="up" class="up">▲</button><button data-dir="left" class="left">◀</button><button data-dir="down" class="down">▼</button><button data-dir="right" class="right">▶</button></div>
+  </section>
+  <div id="toast" role="status"></div>
+  <div id="modal" class="overlay">
+    <div class="menu glass">
+      <div class="eyebrow">CO-OP SURVIVAL · PLAYABLE PROTOTYPE</div>
+      <h1>最后的<span>篝火</span><br/>由你们守护。</h1>
+      <p>与朋友共同探索低多边形森林、收集资源、建造防线。<br/>白昼是准备，黑夜是考验。</p>
+      <div class="feature-pills"><span>▸ 1–4 人合作</span><span>▸ 3D 低多边形</span><span>▸ 跨设备联机</span></div>
+      <label for="nickname">冒险者昵称</label><input id="nickname" maxlength="12" placeholder="输入昵称" value="幸存者" autocomplete="nickname"/>
+      <label for="mode">游戏模式</label><select id="mode"><option value="demo">快速体验（每昼夜 70 秒）</option><option value="normal">标准模式（每昼夜 270 秒）</option></select>
+      <button class="bigbtn" id="createBtn">✦ 创建营地 <span>→</span></button>
+      <div class="separator"><span>或加入朋友的世界</span></div>
+      <div class="joinrow"><input id="inviteCode" placeholder="输入六位房间码" maxlength="6" autocapitalize="characters"/><button id="joinBtn">加入 →</button></div>
+      <div class="menu-foot"><span class="dot"></span> 无需安装，支持电脑和手机浏览器 · 建议开启 WebGL</div>
+      <div id="menuError" class="menu-error"></div>
+    </div>
+  </div>
+  <div id="result" class="overlay hidden"><div class="resultbox glass"><div id="resultIcon" class="result-icon">✦</div><h2 id="resultTitle">远征完成</h2><p id="resultDesc"></p><button id="againBtn" class="bigbtn">返回主菜单 →</button></div></div>
+  <script type="module" src="/main.js"></script>
+</body></html>
