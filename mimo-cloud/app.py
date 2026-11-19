@@ -144,3 +144,20 @@ async def mcp(req:Request):
                 res={"content":[{"type":"text","text":type(e).__name__+": "+str(e)[:160]}],"isError":True}
     else:return {"jsonrpc":"2.0","id":rid,"error":{"code":-32601,"message":"Method not found"}}
     return {"jsonrpc":"2.0","id":rid,"result":res}
+
+# MIMO_ONE_TIME_CONNECTIVITY_TEST_START
+def _real_mimo_smoke():
+    if os.getenv("MIMO_KEY_TEST_FLAG") != "1":
+        return
+    try:
+        output=Path(tempfile.gettempdir())/"mimo_real_smoke.wav"
+        synthesize("你好，这是一段配音测试。",output,"茉莉")
+        print("MIMO_REAL_TTS_TEST_OK bytes="+str(output.stat().st_size),flush=True)
+        output.unlink(missing_ok=True)
+    except Exception as exc:
+        print("MIMO_REAL_TTS_TEST_FAILED "+type(exc).__name__+" "+str(exc)[:180],flush=True)
+
+@app.on_event("startup")
+async def _startup_mimo_smoke():
+    threading.Thread(target=_real_mimo_smoke,daemon=True).start()
+# MIMO_ONE_TIME_CONNECTIVITY_TEST_END
