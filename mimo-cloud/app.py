@@ -47,7 +47,7 @@ def homepage():
 <main><h1>MiMo 私人配音</h1><small>后台已保存 MiMo 密钥。请填写单独的访问令牌，仅供自己调用。</small>
 <section><label>私人访问令牌<input type="password" id="token" autocomplete="off"></label><label>音色<select id="voice"><option>茉莉</option><option>冰糖</option><option>苏打</option><option>白桦</option><option>Mia</option><option>Chloe</option></select></label></section>
 <section><h3>文字转 WAV</h3><textarea id="text" placeholder="配音内容"></textarea><button onclick="speech()">生成语音</button></section>
-<section><h3>视频配音</h3><input id="video" type="file" accept=".mp4"><label>可选 SRT 时间轴</label><textarea id="srt"></textarea><label>或提供解说文字</label><textarea id="script"></textarea><button onclick="video()">生成 MP4</button></section>
+<section><h3>视频配音</h3><input id="video" type="file" accept=".mp4"><label>可选 SRT 时间轴（上传 .srt 或粘贴文本）</label><input id="srtfile" type="file" accept=".srt,text/plain"><textarea id="srt"></textarea><label>或提供解说文字</label><textarea id="script"></textarea><button onclick="video()">生成 MP4</button></section>
 <section id="out">等待操作</section>
 <script>
 const get=id=>document.getElementById(id);
@@ -58,7 +58,7 @@ if(!r.ok){let j=await r.json().catch(()=>({}));throw new Error(j.detail||"HTTP "
 let u=URL.createObjectURL(await r.blob());let a=document.createElement("a");a.href=u;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(u),30000);get("out").textContent="已生成 "+name}
 async function speech(){get("out").textContent="正在合成…";try{await send("/api/speech",JSON.stringify({text:get("text").value,voice:get("voice").value}),"mimo.wav")}catch(e){get("out").textContent=e.message}}
 async function video(){get("out").textContent="正在处理视频…";try{let f=get("video").files[0];if(!f)throw Error("请选择 MP4 文件");
-let b=new FormData();b.append("video",f);b.append("srt_text",get("srt").value);b.append("script",get("script").value);b.append("voice",get("voice").value);
+let b=new FormData();b.append("video",f);let fsub=get("srtfile").files[0];let subtext=fsub?await fsub.text():get("srt").value;b.append("srt_text",subtext);b.append("script",get("script").value);b.append("voice",get("voice").value);
 await send("/api/dub",b,"mimo-dubbed.mp4")}catch(e){get("out").textContent=e.message}}
 </script></main></html>"""
 
